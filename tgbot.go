@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/caarlos0/env/v6"
@@ -104,4 +106,58 @@ func (t *TgBot) getFile(filePath string) ([]byte, error) {
 	}
 
 	return byteFile, nil
+}
+
+func (t *TgBot) Heic2JpgDoc(message *tgbotapi.Message) {
+	file, err := t.GetDocument(message.Document.FileID)
+	if err != nil {
+		log.Printf("GetDocument error: %v\n", err)
+		return
+	}
+
+	jpgFile, err := HeicToJpg(file)
+	if err != nil {
+		log.Printf("HeicToJpg error: %v\n", err)
+		return
+	}
+	jpgName := strings.TrimRight(message.Document.FileName, "heic")
+	jpgName = strings.TrimRight(jpgName, "HEIC")
+	jpgName = fmt.Sprintf("%s.jpg", jpgName)
+
+	imageToSend := tgbotapi.NewDocument(message.Chat.ID, tgbotapi.FileBytes{
+		Name:  jpgName,
+		Bytes: jpgFile,
+	})
+
+	_, err = t.BotApi.Send(imageToSend)
+	if err != nil {
+		log.Printf("Send error: %v\n", err)
+	}
+}
+
+func (t *TgBot) Heic2JpgCompress(message *tgbotapi.Message) {
+	file, err := t.GetDocument(message.Document.FileID)
+	if err != nil {
+		log.Printf("GetDocument error: %v\n", err)
+		return
+	}
+
+	jpgFile, err := HeicToJpg(file)
+	if err != nil {
+		log.Printf("HeicToJpg error: %v\n", err)
+		return
+	}
+	jpgName := strings.TrimRight(message.Document.FileName, "heic")
+	jpgName = strings.TrimRight(jpgName, "HEIC")
+	jpgName = fmt.Sprintf("%s.jpg", jpgName)
+
+	imageToSend := tgbotapi.NewPhoto(message.Chat.ID, tgbotapi.FileBytes{
+		Name:  jpgName,
+		Bytes: jpgFile,
+	})
+
+	_, err = t.BotApi.Send(imageToSend)
+	if err != nil {
+		log.Printf("Send error: %v\n", err)
+	}
 }
